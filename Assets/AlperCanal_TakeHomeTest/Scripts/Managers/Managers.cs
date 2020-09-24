@@ -1,0 +1,66 @@
+﻿using System.Collections.Generic;
+using System.Collections;
+using UnityEngine;
+
+[RequireComponent(typeof(DataManager), 
+                  typeof(MissionManager), 
+                  typeof(HeroManager))]
+public class Managers : MonoBehaviour
+{
+    public static DataManager DataManager;
+    public static MissionManager MissionManager;
+    public static HeroManager HeroManager;
+
+    List<IGameManager> managers;
+
+    private void Awake()
+    {
+        DontDestroyOnLoad(this);
+
+        managers = new List<IGameManager>();
+
+        HeroManager = GetComponent<HeroManager>();
+        MissionManager = GetComponent<MissionManager>();
+        DataManager = GetComponent<DataManager>();
+
+        managers.Add(HeroManager);
+        managers.Add(MissionManager);
+        managers.Add(DataManager);
+
+        StartCoroutine(StartUp());
+    }
+
+    IEnumerator StartUp()
+    {
+        EventMessenger.NotifyEvent(LoadingEvents.LOADING_STARTED);
+
+        WaitForSeconds waitForSeconds = new WaitForSeconds(0.1f);
+
+        foreach (IGameManager gameManager in managers)
+            StartCoroutine(gameManager.Init());
+
+        int readyCount = 0;
+        
+
+        while(readyCount < managers.Count)
+        {
+            Debug.Log(readyCount);
+            int currentReadyCount = 0;
+
+            foreach (IGameManager gameManager in managers)
+                if (gameManager.IsReady())
+                    ++currentReadyCount;
+
+            if(currentReadyCount > readyCount)
+            {
+                EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, currentReadyCount, managers.Count);
+
+                readyCount = currentReadyCount;
+            }
+
+            yield return waitForSeconds;
+        }
+
+        EventMessenger.NotifyEvent(LoadingEvents.LOADING_FINISHED);
+    }
+}
