@@ -5,32 +5,33 @@ using UnityEngine;
 public class HeroManager : ManagerBase,
                            IGameManager
 {
-    List<int> m_OwnedHeroes;
-
-    public int[] GetOwnedHeroes() => m_OwnedHeroes.ToArray();
+    // Dictionary<int, HeroData> m_OwnedHeroes;
+    List<HeroData> m_OwnedHeroes;
 
     ManagerStatus IGameManager.GetStatus() => base.GetStatus();
 
     bool IGameManager.IsReady() => base.IsReady();
 
-    object IGameManager.GetData()
-    {
-        throw new System.NotImplementedException();
-    }
+    object IGameManager.GetData() => m_OwnedHeroes;
 
     IEnumerator IGameManager.Init()
     {
-        m_Status = ManagerStatus.LOADING;
+        m_OwnedHeroes = new List<HeroData>();
 
-        yield return new WaitForSeconds(2f);
+        m_Status = ManagerStatus.LOADING;       
 
         Debug.Log("Hero Manager Started");
+
+        foreach (KeyValuePair<int, HeroInfoBase> pair in HeroInfoBase.data)
+            Debug.Log($"{pair.Value.GetToolTip()}");
+
+        yield return null;
 
         m_Status = ManagerStatus.STARTED;
     }
 
     void IGameManager.UpdateData(object data)
     {
-        throw new System.NotImplementedException();
+        m_OwnedHeroes = data as List<HeroData>;
     }
 }

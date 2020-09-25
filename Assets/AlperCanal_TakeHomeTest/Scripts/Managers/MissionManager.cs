@@ -5,31 +5,55 @@ using UnityEngine;
 public class MissionManager : ManagerBase,
                               IGameManager
 {
-    public bool IsFighting { get; private set; }
+    [System.Serializable]
+    public class FightSettings
+    {
+        public bool isFighting = false;
+        public bool isPlayerTurn = false;
+        public HeroData[] playerSide = null;
+        public HeroData enemy = null;
+    }
+
+    public bool IsFighting => fightSettings.isFighting;
+    public bool IsPlayerTurn => fightSettings.isPlayerTurn;
+
+    FightSettings fightSettings;
 
     ManagerStatus IGameManager.GetStatus() => base.GetStatus();
 
     bool IGameManager.IsReady() => base.IsReady();
-    
 
     object IGameManager.GetData()
     {
-        throw new System.NotImplementedException();
+        return fightSettings;
     }
 
     IEnumerator IGameManager.Init()
     {
         m_Status = ManagerStatus.LOADING;
 
-        yield return new WaitForSeconds(1f);
+        fightSettings = new FightSettings();
 
         Debug.Log("Mission Manager Started");
+
+        yield return null;
 
         m_Status = ManagerStatus.STARTED;
     }
 
+    void CreateObjects()
+    {
+        // Will create gameobjects for the fight scene
+    }
+
+    void PrepareFightScene()
+    {
+        // Update HeroData of gameobjects
+    }
+
+
     void IGameManager.UpdateData(object data)
     {
-        throw new System.NotImplementedException();
+        fightSettings = data as FightSettings;
     }
 }

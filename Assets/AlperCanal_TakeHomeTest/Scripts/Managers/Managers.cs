@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿/* Main class for the initialization 
+ * Starts all the managers up
+ */ 
+
+using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 
@@ -40,11 +44,9 @@ public class Managers : MonoBehaviour
             StartCoroutine(gameManager.Init());
 
         int readyCount = 0;
-        
 
         while(readyCount < managers.Count)
         {
-            Debug.Log(readyCount);
             int currentReadyCount = 0;
 
             foreach (IGameManager gameManager in managers)
@@ -53,7 +55,7 @@ public class Managers : MonoBehaviour
 
             if(currentReadyCount > readyCount)
             {
-                EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, currentReadyCount, managers.Count);
+                EventMessenger.NotifyEvent(LoadingEvents.LOADING_PROGRESS, currentReadyCount, managers.Count);
 
                 readyCount = currentReadyCount;
             }
