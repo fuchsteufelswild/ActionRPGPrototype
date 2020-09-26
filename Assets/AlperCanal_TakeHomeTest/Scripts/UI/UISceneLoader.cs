@@ -6,36 +6,35 @@ using UnityEngine.UI;
 public class UISceneLoader : MonoBehaviour
 {
     [SerializeField] Image m_Background;
-    [SerializeField] Image m_LoadingBar;
+    [SerializeField] DynamicFillBar m_LoadingBar;
 
     private void Awake()
     {
         EventMessenger.AddListener(LoadingEvents.LOADING_STARTED, StartLoading);
         EventMessenger.AddListener(LoadingEvents.LOADING_FINISHED, LoadingFinished);
-        EventMessenger.AddListener<int, int>(LoadingEvents.LOADING_PROGRESS, UpdateSlider);
+        EventMessenger.AddListener<int, int>(LoadingEvents.LOADING_PROGRESS, UpdateLoadingBar);
     }
 
     private void OnDestroy()
     {
         EventMessenger.RemoveListener(LoadingEvents.LOADING_STARTED, StartLoading);
         EventMessenger.RemoveListener(LoadingEvents.LOADING_FINISHED, LoadingFinished);
-        EventMessenger.RemoveListener<int, int>(LoadingEvents.LOADING_PROGRESS, UpdateSlider);
+        EventMessenger.RemoveListener<int, int>(LoadingEvents.LOADING_PROGRESS, UpdateLoadingBar);
     }
 
-    public void StartLoading()
+    void StartLoading()
     {
+        m_LoadingBar.SetFillAmount(0);
         m_Background.gameObject.SetActive(true);
         m_LoadingBar.gameObject.SetActive(true);
-
-        m_LoadingBar.fillAmount = 0;
     }
 
-    public void LoadingFinished()
+    void LoadingFinished()
     {
         m_Background.gameObject.SetActive(false);
         m_LoadingBar.gameObject.SetActive(false);
     }
 
-    public void UpdateSlider(int numberReady, int totalNumber) =>
-        m_LoadingBar.fillAmount = (float)numberReady / totalNumber;
+    void UpdateLoadingBar(int numberReady, int totalNumber) =>
+        m_LoadingBar.SetFillAmount(numberReady / (float)totalNumber);
 }

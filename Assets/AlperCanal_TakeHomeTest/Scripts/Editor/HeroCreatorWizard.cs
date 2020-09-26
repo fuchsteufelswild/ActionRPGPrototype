@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 public class HeroCreatorWizard : ScriptableWizard
@@ -11,19 +9,22 @@ public class HeroCreatorWizard : ScriptableWizard
     public string heroName = "Hero Name";
     public int attackDamage = 10;
     public int baseHealth = 100;
-    private bool isEnemy = false;
-    [TextArea] public string toolTip = "";
+    public Color heroColor;
+    [TextArea] public string toolTip = HeroData.DefaultToolTip;
 
-    private HeroInfoBase CreateHero()
+    private void CreateHero(bool isEnemy)
     {
-        HeroInfoBase heroInfoBase = ScriptableObject.CreateInstance<HeroInfoBase>();
+        HeroInfoBase heroInfo = ScriptableObject.CreateInstance<HeroInfoBase>();
+        
+        heroInfo.heroName = heroName;
+        heroInfo.attackDamage = attackDamage;
+        heroInfo.baseHealth = baseHealth;
+        heroInfo.toolTip = toolTip;
+        heroInfo.heroColor = heroColor;
 
-        heroInfoBase.heroName = heroName;
-        heroInfoBase.attackDamage = attackDamage;
-        heroInfoBase.baseHealth = baseHealth;
-        heroInfoBase.toolTip = toolTip;
+        heroInfo.isEnemy = isEnemy;
 
-        return heroInfoBase;
+        SaveHero(heroInfo);
     }
 
     private void SaveHero(HeroInfoBase obj)
@@ -35,20 +36,8 @@ public class HeroCreatorWizard : ScriptableWizard
         Selection.activeObject = obj;
     }
 
-    private void OnWizardCreate()
-    {
-        HeroInfoBase obj = CreateHero();
-        obj.isEnemy = false;
+    private void OnWizardCreate() => CreateHero(false);
 
-        SaveHero(obj);
-    }
-
-    private void OnWizardOtherButton()
-    {
-        HeroInfoBase obj = CreateHero();
-        obj.isEnemy = true;
-
-        SaveHero(obj);
-    }
+    private void OnWizardOtherButton() => CreateHero(true);
 
 }

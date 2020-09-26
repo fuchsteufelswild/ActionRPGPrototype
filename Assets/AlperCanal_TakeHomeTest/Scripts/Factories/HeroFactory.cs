@@ -1,48 +1,124 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 
 public static class HeroFactory
 {
-    static string[] HeroNameList = { "Vindicate", "Bionic", "Tornado", "Barrage", "Monsoon", "Glazier",
-                                     "Barracuda", "Ember", "Tempest", "Velvet", "Nebula", "Licorice",
-                                     "Iris", "Quartz", "Radiance", "Wildfire", "Bellona", "Anesthesia",
-                                     "Voyd", "Mirage"};
-
-
     public struct HeroIngredients
     {
-        public string heroName;
         public (int x, int y) healthRange;
         public (int x, int y) attackDamageRange;
 
-        public HeroIngredients(string heroName, (int, int) healthRange, (int, int) attackDamageRange)
+        public HeroIngredients((int, int) healthRange, (int, int) attackDamageRange)
         {
-            this.heroName = heroName;
             this.healthRange = healthRange;
             this.attackDamageRange = attackDamageRange;
         }
     }
 
-    static string GetRandomName() =>
-        HeroNameList[Random.Range(0, HeroNameList.Length)];
+    public const int ALLY_HERO_MIN_HEALTH_LIMIT = 100;
+    public const int ALLY_HERO_MAX_HEALTH_LIMIT = 200;
+
+    public const int ALLY_HERO_MIN_ATTACK_LIMIT = 10;
+    public const int ALLY_HERO_MAX_ATTACK_LIMIT = 20;
+
+    public const int ENEMY_HERO_MIN_HEALTH_LIMIT = 200;
+    public const int ENEMY_HERO_MAX_HEALTH_LIMIT = 400;
+
+    public const int ENEMY_HERO_MIN_ATTACK_LIMIT = 20;
+    public const int ENEMY_HERO_MAX_ATTACK_LIMIT = 40;
+
+    static string[] HeroNameList = { "Vindicate", "Bionic", "Tornado", "Barrage", "Monsoon", "Glazier",
+                                     "Barracuda", "Ember", "Tempest", "Velvet", "Nebula", "Licorice",
+                                     "Iris", "Quartz", "Radiance", "Wildfire", "Bellona", "Anesthesia",
+                                     "Voyd", "Mirage"};
+
+    /* Might read from a file but preferred more
+     * simplistic approach
+     */
+    static Dictionary<string, Color> availableHeroNamesAndColors = new Dictionary<string, Color>()
+    {
+        { "Vindicate", Color.black },
+        { "Bionic", Color.green },
+        { "Tornado", Color.grey },
+        { "Barrage", Color.yellow },
+        { "Glazier", Color.blue },
+        { "Iris", Color.magenta },
+        { "Ember", Color.red },
+        { "Bellona", Color.white },
+        { "Mirage", Color.cyan },
+        { "Monsoon", (Color.yellow + Color.red) / 2f },
+        { "Velvet", (Color.blue + Color.magenta) / 2f}
+    };
+
+    public static void UpdateAvailableHeros()
+    {
+        List<HeroData> heroes = Managers.HeroManager.HeroData;
+
+        foreach (HeroData hero in heroes)
+            availableHeroNamesAndColors.Remove(hero.HeroName);
+    }
+
+    static KeyValuePair<string, Color> GetRandomName() =>
+        availableHeroNamesAndColors.ElementAt(Random.Range(0, availableHeroNamesAndColors.Count));
 
     static HeroData CreateHero(HeroIngredients data, bool isEnemy)
     {
         HeroData newHero = new HeroData();
-        string heroName = GetRandomName();
+        KeyValuePair<string, Color> heroAttributes = GetRandomName();
         int health = Random.Range(data.healthRange.x, data.healthRange.y);
         int attackDamage = Random.Range(data.attackDamageRange.x, data.attackDamageRange.y);
 
-        newHero.SetHeroData(heroName, health, attackDamage, isEnemy);
+        newHero.SetHeroData(heroAttributes, health, attackDamage, isEnemy);
+
+        availableHeroNamesAndColors.Remove(heroAttributes.Key);
+
         return newHero;
     }
 
-    public static HeroData CreateAllyHero(HeroIngredients data) =>
-        CreateHero(data, true);
-
-    public static HeroData CreateEnemyData(HeroIngredients data) =>
+    static HeroData CreateAllyHero(HeroIngredients data) =>
         CreateHero(data, false);
 
+    static HeroData CreateEnemyHero(HeroIngredients data) =>
+        CreateHero(data, true);
 
+    static HeroData CreateHeroFromScriptableObject(HeroInfoBase info) =>
+        new HeroData(info);
 
+    public static HeroData GetNewHero(bool isEnemy)
+    {
+        var heroDataBase = HeroInfoBase.data.Where(pair => pair.Value.isEnemy == isEnemy)
+                                           .ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        int randomIndex = Random.Range(0, HeroInfoBase.data.Count * 2);
+
+        HeroData newHero = null;
+
+        if (randomIndex >= heroDataBase.Count)
+        {
+            if (!isEnemy)
+                newHero = CreateAllyHero(new HeroIngredients((ALLY_HERO_MIN_HEALTH_LIMIT, ALLY_HERO_MAX_HEALTH_LIMIT), 
+                                                             (ALLY_HERO_MIN_ATTACK_LIMIT, ALLY_HERO_MAX_ATTACK_LIMIT)));
+            else
+                newHero = CreateEnemyHero(new HeroIngredients((ENEMY_HERO_MIN_HEALTH_LIMIT, ENEMY_HERO_MAX_HEALTH_LIMIT), 
+                                                              (ENEMY_HERO_MIN_ATTACK_LIMIT, ENEMY_HERO_MAX_ATTACK_LIMIT)));
+        }
+        else
+        {
+            newHero = CreateHeroFromScriptableObject(heroDataBase.ElementAt(randomIndex).Value);
+
+            HeroInfoBase.data.Remove(newHero.HashCode);
+        }
+
+        return newHero;
+    }
+
+    public static HeroData GetNewAllyHero() =>
+        GetNewHero(false);
+
+    public static HeroData GetNewEnemyHero() =>
+        GetNewHero(true);
+
+    
 
 }

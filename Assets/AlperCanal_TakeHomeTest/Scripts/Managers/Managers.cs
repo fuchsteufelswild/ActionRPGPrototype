@@ -36,6 +36,8 @@ public class Managers : MonoBehaviour
 
     IEnumerator StartUp()
     {
+        yield return new WaitForSeconds(0.1f);
+
         EventMessenger.NotifyEvent(LoadingEvents.LOADING_STARTED);
 
         WaitForSeconds waitForSeconds = new WaitForSeconds(0.1f);

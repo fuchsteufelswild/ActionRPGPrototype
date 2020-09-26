@@ -18,32 +18,38 @@ public class HeroData
     int m_Level;
     int m_Experience;
     string m_HeroName;
+    Color m_Color;
 
-    public int Health => m_Health;
+    public int Health { get => m_Health; private set => m_Health = value; } 
     public int MaxHealth => m_MaxHealth;
     public int Level => m_Level;
     public string HeroName => m_HeroName;
+    public Color HeroColor => m_Color;
     public int AttackDamage => m_AttackDamage;
     public int Experience => m_Experience;
 
     public int HashCode => 
         heroInfo == null ? m_HeroName.GetHashCode() : heroInfo.HashCode();
 
-    public HeroData(HeroInfoBase info)
-    {
-        IsInitialzied = true;
-        heroInfo = info;
+    public void UpdateHealth(int newValue) => Health = newValue;
 
-        m_HeroName = heroInfo.heroName;
+    void SetDefaults()
+    {
         m_Experience = 0;
         m_Level = 1;
-        m_Health = m_MaxHealth = heroInfo.baseHealth;
-        m_AttackDamage = heroInfo.attackDamage;
+        IsInitialzied = true;
+    }
+
+    public HeroData(HeroInfoBase info)
+    {
+        heroInfo = info;
+
+        SetHeroData(new KeyValuePair<string, Color>(heroInfo.heroName, heroInfo.heroColor), heroInfo.baseHealth, heroInfo.attackDamage, heroInfo.isEnemy);
     }
 
     public HeroData() => heroInfo = null;
 
-    public void SetHeroData(string heroName, int health, int attackDamage, bool isEnemy)
+    public void SetHeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy)
     {
         if (IsInitialzied)
         {
@@ -51,14 +57,13 @@ public class HeroData
             return;
         }
 
-        IsInitialzied = true;
+        SetDefaults();
 
         IsEnemy = isEnemy;
-        m_HeroName = heroName;
+        m_HeroName = heroAttributes.Key;
+        m_Color = heroAttributes.Value;
         m_AttackDamage = attackDamage;
         m_Health = m_MaxHealth = health;
-        m_Experience = 0;
-        m_Level = 1;
     }
 
     public string ToolTip()
@@ -69,7 +74,7 @@ public class HeroData
         else
             sBuilder = new StringBuilder(DefaultToolTip);
 
-        sBuilder.Replace("{NAME}", heroInfo.heroName);
+        sBuilder.Replace("{NAME}", m_HeroName);
         sBuilder.Replace("{DAMAGE}", m_AttackDamage.ToString());
         sBuilder.Replace("{HEALTH}", m_MaxHealth.ToString());
         sBuilder.Replace("{LEVEL}", m_Level.ToString());

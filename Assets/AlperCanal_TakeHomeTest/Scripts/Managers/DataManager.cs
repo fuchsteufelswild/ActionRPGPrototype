@@ -37,7 +37,6 @@ public class DataManager : ManagerBase,
         throw new System.NotImplementedException();
     }
 
-
     public void SaveGameData()
     {
         // Will Save Manager Datas into a file
@@ -48,6 +47,9 @@ public class DataManager : ManagerBase,
         // Load Data From File and 
         // Update Managers
 
-        if (!File.Exists(m_FilePath)) return;
+        if (!File.Exists(m_FilePath))
+        {
+            ((IGameManager)Managers.HeroManager).UpdateData(null);
+        }
     }
 }

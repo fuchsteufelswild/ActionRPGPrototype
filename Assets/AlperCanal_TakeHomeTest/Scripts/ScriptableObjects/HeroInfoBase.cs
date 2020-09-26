@@ -8,8 +8,9 @@ public class HeroInfoBase : ScriptableObject
     public string heroName;
     public int attackDamage;
     public int baseHealth;
+    public Color heroColor;
 
-    public bool isEnemy;
+    [HideInInspector] public bool isEnemy;
 
     [TextArea] public string toolTip = HeroData.DefaultToolTip;
 
@@ -25,7 +26,7 @@ public class HeroInfoBase : ScriptableObject
             {
                 HeroInfoBase[] heroes = Resources.LoadAll<HeroInfoBase>("Heroes/");
 
-                cache = heroes.ToDictionary(hero => hero.GetHashCode(), hero => hero);
+                cache = heroes.ToDictionary(hero => hero.HashCode(), hero => hero);
             }
 
             return cache;

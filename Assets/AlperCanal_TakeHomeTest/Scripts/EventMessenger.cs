@@ -25,7 +25,7 @@ public static class EventMessenger
                 Debug.LogError("Incompatible delegate types to combine");
                 return;
             }
-            Delegate.Combine(events[eventName], action);
+            events[eventName] = Delegate.Combine(events[eventName], action);
         }
         else
             events[eventName] = action;
@@ -61,7 +61,8 @@ public static class EventMessenger
                 Debug.LogError("Incompatible delegate types to combine");
                 return;
             }
-            Delegate.Combine(events[eventName], action);
+            
+            events[eventName] = Delegate.Combine(events[eventName], action);
         }
         else
             events[eventName] = action;
@@ -95,7 +96,7 @@ public static class EventMessenger
                 Debug.LogError("Incompatible delegate types to combine");
                 return;
             }
-            Delegate.Combine(events[eventName], action);
+            events[eventName] = Delegate.Combine(events[eventName], action);
         }
         else
             events[eventName] = action;
