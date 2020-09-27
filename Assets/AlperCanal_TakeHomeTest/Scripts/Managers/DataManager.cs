@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
@@ -39,6 +38,8 @@ public class DataManager : ManagerBase,
 
     public void SaveGameData()
     {
+        // Only one save at a time
+
         // Will Save Manager Datas into a file
     }
 

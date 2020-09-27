@@ -14,6 +14,7 @@ public class Managers : MonoBehaviour
     public static DataManager DataManager;
     public static MissionManager MissionManager;
     public static HeroManager HeroManager;
+    public static AudioManager AudioManager;
 
     List<IGameManager> managers;
 
@@ -26,6 +27,7 @@ public class Managers : MonoBehaviour
         HeroManager = GetComponent<HeroManager>();
         MissionManager = GetComponent<MissionManager>();
         DataManager = GetComponent<DataManager>();
+        AudioManager = GetComponentInChildren<AudioManager>();
 
         managers.Add(HeroManager);
         managers.Add(MissionManager);

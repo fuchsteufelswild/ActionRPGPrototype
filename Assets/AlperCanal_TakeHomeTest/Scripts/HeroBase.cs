@@ -24,7 +24,7 @@ public abstract class HeroBase : MonoBehaviour,
         m_HeroFrame.color = m_DefaultFrameColor;
     }
 
-    protected void Start()
+    protected virtual void Start()
     {
         m_HeroImage.color = m_DefaultHeroImageColor;
         m_HeroFrame.color = m_DefaultFrameColor;

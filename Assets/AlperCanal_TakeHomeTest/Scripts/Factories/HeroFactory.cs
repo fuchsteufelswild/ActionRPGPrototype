@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+
 public static class HeroFactory
 {
     public struct HeroIngredients
@@ -22,19 +23,19 @@ public static class HeroFactory
     public const int ALLY_HERO_MIN_ATTACK_LIMIT = 10;
     public const int ALLY_HERO_MAX_ATTACK_LIMIT = 20;
 
-    public const int ENEMY_HERO_MIN_HEALTH_LIMIT = 200;
-    public const int ENEMY_HERO_MAX_HEALTH_LIMIT = 400;
+    public const int ENEMY_HERO_MIN_HEALTH_LIMIT = 20;
+    public const int ENEMY_HERO_MAX_HEALTH_LIMIT = 25;
 
-    public const int ENEMY_HERO_MIN_ATTACK_LIMIT = 20;
-    public const int ENEMY_HERO_MAX_ATTACK_LIMIT = 40;
+    public const int ENEMY_HERO_MIN_ATTACK_LIMIT = 200;
+    public const int ENEMY_HERO_MAX_ATTACK_LIMIT = 400;
 
     static string[] HeroNameList = { "Vindicate", "Bionic", "Tornado", "Barrage", "Monsoon", "Glazier",
                                      "Barracuda", "Ember", "Tempest", "Velvet", "Nebula", "Licorice",
                                      "Iris", "Quartz", "Radiance", "Wildfire", "Bellona", "Anesthesia",
                                      "Voyd", "Mirage"};
 
-    /* Might read from a file but preferred more
-     * simplistic approach
+    /* Might read from a file or from a database
+     * but preferred more simplistic approach
      */
     static Dictionary<string, Color> availableHeroNamesAndColors = new Dictionary<string, Color>()
     {
@@ -62,16 +63,18 @@ public static class HeroFactory
     static KeyValuePair<string, Color> GetRandomName() =>
         availableHeroNamesAndColors.ElementAt(Random.Range(0, availableHeroNamesAndColors.Count));
 
+    // Create a Hero with random attributes
     static HeroData CreateHero(HeroIngredients data, bool isEnemy)
     {
         HeroData newHero = new HeroData();
         KeyValuePair<string, Color> heroAttributes = GetRandomName();
-        int health = Random.Range(data.healthRange.x, data.healthRange.y);
-        int attackDamage = Random.Range(data.attackDamageRange.x, data.attackDamageRange.y);
+        int health = Random.Range(data.healthRange.x, data.healthRange.y + 1);
+        int attackDamage = Random.Range(data.attackDamageRange.x, data.attackDamageRange.y + 1);
 
         newHero.SetHeroData(heroAttributes, health, attackDamage, isEnemy);
 
-        availableHeroNamesAndColors.Remove(heroAttributes.Key);
+        if(!isEnemy)
+            availableHeroNamesAndColors.Remove(heroAttributes.Key);
 
         return newHero;
     }
@@ -85,10 +88,11 @@ public static class HeroFactory
     static HeroData CreateHeroFromScriptableObject(HeroInfoBase info) =>
         new HeroData(info);
 
-    public static HeroData GetNewHero(bool isEnemy)
+    // Create a new hero from a recipe or using random attributes
+    static HeroData GetNewHero(bool isEnemy)
     {
         var heroDataBase = HeroInfoBase.data.Where(pair => pair.Value.isEnemy == isEnemy)
-                                           .ToDictionary(pair => pair.Key, pair => pair.Value);
+                                            .ToDictionary(pair => pair.Key, pair => pair.Value);
 
         int randomIndex = Random.Range(0, HeroInfoBase.data.Count * 2);
 
@@ -118,7 +122,4 @@ public static class HeroFactory
 
     public static HeroData GetNewEnemyHero() =>
         GetNewHero(true);
-
-    
-
 }

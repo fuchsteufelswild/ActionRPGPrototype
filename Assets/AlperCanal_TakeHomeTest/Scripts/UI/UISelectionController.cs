@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
 
@@ -7,11 +6,11 @@ public class UISelectionController : MonoBehaviour
 {
     [SerializeField] GameObject m_ToolTip;
 
-    IEnumerator selectionCoroutine = null;
-
     [SerializeField] float m_TimeForInformationReveal;
 
-    float m_OffsetMultiplier = .5f;
+    IEnumerator selectionCoroutine = null;
+
+    float m_OffsetMultiplier = .2f;
 
     bool isShowingTooltip = false;
     private void Awake()
@@ -20,9 +19,15 @@ public class UISelectionController : MonoBehaviour
         EventMessenger.AddListener<Action>(SelectionEvents.HERO_FRAME_CLICKED_UP, OnHeroFrameMouseUp);        
     }
 
+    private void OnDestroy()
+    {
+        EventMessenger.RemoveListener<HeroBase>(SelectionEvents.HERO_FRAME_CLICKED_DOWN, OnHeroFrameClicked);
+        EventMessenger.RemoveListener<Action>(SelectionEvents.HERO_FRAME_CLICKED_UP, OnHeroFrameMouseUp);
+    }
+
     Vector2 GetTooltipPosition(Vector2 screenPosition, RectTransform targetTransform) =>
-        screenPosition + new Vector2(m_OffsetMultiplier * Screen.width / targetTransform.sizeDelta.x, 
-                                     m_OffsetMultiplier * Screen.height / targetTransform.sizeDelta.y);
+        screenPosition + new Vector2(m_OffsetMultiplier * (Screen.width / 1920f) * targetTransform.sizeDelta.x, 
+                                     m_OffsetMultiplier * (Screen.height / 1080f) * targetTransform.sizeDelta.y);
 
     void ShowTooltip(HeroBase target)
     {

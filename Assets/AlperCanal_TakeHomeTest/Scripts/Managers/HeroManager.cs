@@ -1,15 +1,24 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
-using System.Linq;
 
 public class HeroManager : ManagerBase,
                            IGameManager
 {
-    public const int INITIAL_HERO_COUNT = 5;
+    public const int INITIAL_HERO_COUNT = 3;
     public const int MAX_AVAILABLE_HERO_COUNT = 10;
 
     List<HeroData> m_OwnedHeroes;
+
+    private void Awake()
+    {
+        EventMessenger.AddListener(SceneEvents.REWARD_MATCH_COUNT, AddNewHero);
+    }
+
+    private void OnDestroy()
+    {
+        EventMessenger.RemoveListener(SceneEvents.REWARD_MATCH_COUNT, AddNewHero);
+    }
 
     ManagerStatus IGameManager.GetStatus() => base.GetStatus();
 
@@ -20,6 +29,15 @@ public class HeroManager : ManagerBase,
     public List<HeroData> HeroData => m_OwnedHeroes;
 
     public HeroData[] HeroDataArray => m_OwnedHeroes.ToArray();
+
+    public void AddNewHero()
+    {
+        if (m_OwnedHeroes.Count < 10)
+        {
+            m_OwnedHeroes.Add(HeroFactory.GetNewAllyHero());
+            // Save Here
+        }
+    }
 
     IEnumerator IGameManager.Init()
     {
@@ -50,8 +68,7 @@ public class HeroManager : ManagerBase,
             return;
         }
     
-        m_OwnedHeroes = data as List<HeroData>;
-            
+        m_OwnedHeroes = data as List<HeroData>;   
     }
    
 }

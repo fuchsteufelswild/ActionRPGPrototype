@@ -12,6 +12,8 @@ public class HeroData
     public bool IsInitialzied { get; private set; }
     public bool IsEnemy { get; private set; }
 
+    const int MaximumExperience = 1; 
+
     int m_AttackDamage;
     int m_Health;
     int m_MaxHealth;
@@ -33,6 +35,24 @@ public class HeroData
 
     public void UpdateHealth(int newValue) => Health = newValue;
 
+    public void ResetHealth() => m_Health = m_MaxHealth;
+
+    public bool IncreaseExperience()
+    {
+        if (++m_Experience == MaximumExperience)
+            return true;
+
+        return false;
+    }
+
+    public void LevelUp()
+    {
+        m_AttackDamage = (int)(m_AttackDamage * 1.1f);
+        m_MaxHealth = (int)(m_MaxHealth * 1.1f);
+        ++m_Level;
+        m_Experience = 0;
+    }
+
     void SetDefaults()
     {
         m_Experience = 0;
@@ -46,6 +66,9 @@ public class HeroData
 
         SetHeroData(new KeyValuePair<string, Color>(heroInfo.heroName, heroInfo.heroColor), heroInfo.baseHealth, heroInfo.attackDamage, heroInfo.isEnemy);
     }
+
+    public HeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy) =>
+        SetHeroData(heroAttributes, health, attackDamage, isEnemy);
 
     public HeroData() => heroInfo = null;
 

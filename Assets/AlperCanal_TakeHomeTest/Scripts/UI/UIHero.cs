@@ -1,15 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using System;
-using UnityEngine.EventSystems;
+﻿using UnityEngine;
 
 public class UIHero : HeroBase
 {
     [SerializeField] Color m_SelectedFrameColor;
 
     bool isSelected = false;
+
+    public void ResetSelection() => isSelected = false;
 
     protected override void MakeSelection()
     {

@@ -26,4 +26,20 @@ public static class SceneEvents
 
     public const string BATTLE_END_SIGNAL = "BATTLE_END_SIGNAL";
     public const string BATTLE_ENDED = "BATTLE_ENDED";
+
+    public const string REWARDING_COMPLETE = "REWARDING_COMPLETE";
+
+    public const string REWARD_MATCH_COUNT = "REWARD_MATCH_COUNT";
+}
+
+public static class FightEvents
+{
+    public const string ATTACK_SIGNAL_GIVEN = "ATTACK_SIGNAL_GIVEN";
+    public const string DAMAGE_DONE = "DAMAGE_DONE";
+    public const string ATTACK_COMPLETED = "ATTACK_COMPLETED";
+
+    public const string HERO_DIED = "HERO_DIED";
+
+    public const string ALL_ENEMY_DEAD = "ALL_ENEMY_DEAD";
+    public const string ALL_ALLY_DEAD = "ALL_ALLY_DEAD";
 }

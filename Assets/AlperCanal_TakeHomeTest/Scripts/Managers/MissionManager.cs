@@ -5,13 +5,37 @@ using UnityEngine;
 public class MissionManager : ManagerBase,
                               IGameManager
 {
+    const int REWARD_MATCH_COUNT = 1;
+
     [System.Serializable]
     public class FightSettings
     {
+        public int consectuiveFightCount = 0;
+
         public bool isFighting = false;
-        public bool isPlayerTurn = false;
+        public bool isPlayerTurn = true;
+        public bool isRewardingComplete = false;
         public HeroData[] playerSide = null;
         public HeroData[] enemySide = null;
+
+
+        public void UpdateSettings(bool isFighting, bool isPlayerTurn, bool isRewardingComplete, HeroData[] playerSide, HeroData[] enemySide)
+        {
+            this.isFighting = isFighting;
+            this.isPlayerTurn = isPlayerTurn;
+            this.isRewardingComplete = isRewardingComplete;
+            this.playerSide = playerSide;
+            this.enemySide = enemySide;
+        }
+
+        public void Reset()
+        {
+            isFighting = false;
+            isPlayerTurn = true;
+            isRewardingComplete = false;
+            playerSide = null;
+            enemySide = null;
+        }
     }
 
     public const int ENEMY_SIDE_COUNT = 1;
@@ -19,7 +43,6 @@ public class MissionManager : ManagerBase,
 
     public bool IsFighting => fightSettings.isFighting;
     public bool IsPlayerTurn => fightSettings.isPlayerTurn;
-    public bool IsAttackInProgress { get; set; }
 
     public bool CanSelectHero => m_SelectedHeroes.Count < 3;
 
@@ -37,11 +60,40 @@ public class MissionManager : ManagerBase,
     {
         m_BattleScene = FindObjectOfType<BattleScene>();
         fightSettings = new FightSettings();
-        IsAttackInProgress = false;
         EventMessenger.AddListener<HeroData>(SelectionEvents.HERO_FRAME_SELECTED, OnMenuHeroSelected);
         EventMessenger.AddListener<HeroData>(SelectionEvents.HERO_FRAME_DESELECTED, OnMenuHeroDeselected);
         EventMessenger.AddListener(SceneEvents.BATTLE_START_SIGNAL, OnBattleStart);
+        EventMessenger.AddListener(SceneEvents.REWARDING_COMPLETE, LoadMenu);
     }
+
+    void LoadMenu()
+    {
+        int stepCount = 3;
+        int currentStep = 0;
+
+        EventMessenger.NotifyEvent(LoadingEvents.LOADING_STARTED);
+
+        m_SelectedHeroes.Clear();
+        m_EnemyHeroes.Clear();
+
+        fightSettings.Reset();
+
+        if (++fightSettings.consectuiveFightCount == REWARD_MATCH_COUNT)
+        {
+            fightSettings.consectuiveFightCount = 0;
+            Managers.HeroManager.AddNewHero();
+
+            // EventMessenger.NotifyEvent(SceneEvents.REWARD_MATCH_COUNT);
+        }
+
+        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, ++currentStep, stepCount);
+
+        // Save Here
+        
+
+        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, ++currentStep, stepCount);
+    }
+    
 
     void OnBattleStart()
     {
@@ -50,6 +102,8 @@ public class MissionManager : ManagerBase,
 
     IEnumerator ConfigureBattle()
     {
+        int currentStep = 0;
+        int stepCount = 3;
         EventMessenger.NotifyEvent(LoadingEvents.LOADING_STARTED);
 
         for (int i = 0; i < ENEMY_SIDE_COUNT; ++i)
@@ -57,26 +111,37 @@ public class MissionManager : ManagerBase,
 
         yield return null;
 
-        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, 1, 3);
+        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, currentStep++, stepCount);
 
         fightSettings.playerSide = m_SelectedHeroes.ToArray();
         fightSettings.enemySide = m_EnemyHeroes.ToArray();
+        fightSettings.isFighting = true;
+        fightSettings.isPlayerTurn = true;
+        fightSettings.isRewardingComplete = false;
+
+
+
+        // Save Here
+
+        
 
         yield return null;
 
-        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, 2, 3);
+        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, currentStep++, stepCount);
 
-        m_BattleScene.UpdateHeroes(fightSettings.playerSide, fightSettings.enemySide);
+        m_BattleScene.PrepareBattleScene(fightSettings);
+        // m_BattleScene.UpdateHeroes(fightSettings.playerSide, fightSettings.enemySide);
 
         yield return null;
 
-        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, 3, 3);
+        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, currentStep++, stepCount);
 
         yield return null;
 
         EventMessenger.NotifyEvent(LoadingEvents.LOADING_FINISHED);
 
         
+        m_BattleScene.CurrentFightSettings = fightSettings;
     }
 
     void OnMenuHeroSelected(HeroData hero)

@@ -23,6 +23,19 @@ public class UIController : MonoBehaviour
         EventMessenger.AddListener(HeroEvents.HERO_ADDED, Refresh);
         EventMessenger.AddListener<HeroData>(SelectionEvents.HERO_FRAME_SELECTED, OnHeroSelected);
         EventMessenger.AddListener<HeroData>(SelectionEvents.HERO_FRAME_DESELECTED, OnHeroDeselected);
+        EventMessenger.AddListener(SceneEvents.REWARDING_COMPLETE, LoadMenu);
+    }
+
+    void LoadMenu()
+    {
+        Refresh();
+
+        m_BattleButton.interactable = false;
+        m_GameMenu.gameObject.SetActive(true);
+        m_BattleScene.gameObject.SetActive(false);
+
+        EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, 1, 1);
+        EventMessenger.NotifyEvent(LoadingEvents.LOADING_FINISHED);
     }
 
     public void SignalBattle()
@@ -30,6 +43,7 @@ public class UIController : MonoBehaviour
         EventMessenger.NotifyEvent(SceneEvents.BATTLE_START_SIGNAL);
 
         m_GameMenu.gameObject.SetActive(false);
+        m_BattleScene.gameObject.SetActive(true);
     }
 
     void OnHeroSelected(HeroData hero)
@@ -47,8 +61,12 @@ public class UIController : MonoBehaviour
     {
         HeroData[] heroDatas = Managers.HeroManager.HeroDataArray;
 
-        for(int i = 0; i < heroDatas.Length; ++i)
+        for (int i = 0; i < heroDatas.Length; ++i)
+        {
+            heroDatas[i].ResetHealth();
             uiHeros[i].SetHeroData(heroDatas[i]);
+            uiHeros[i].ResetSelection();
+        }
     }
 
 }
