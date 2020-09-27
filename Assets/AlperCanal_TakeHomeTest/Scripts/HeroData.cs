@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Text;
 
+[System.Serializable]
 public class HeroData
 {
-    HeroInfoBase heroInfo;
-
     public const string DefaultToolTip = "Name: {NAME}\nDamage: {DAMAGE}\nHealth: {HEALTH}\nLevel: {LEVEL}\nExperience: {EXPERIENCE}";
 
     public bool IsInitialzied { get; private set; }
@@ -20,18 +19,21 @@ public class HeroData
     int m_Level;
     int m_Experience;
     string m_HeroName;
-    Color m_Color;
+
+    float m_ColorR;
+    float m_ColorG;
+    float m_ColorB;
 
     public int Health { get => m_Health; private set => m_Health = value; } 
     public int MaxHealth => m_MaxHealth;
     public int Level => m_Level;
     public string HeroName => m_HeroName;
-    public Color HeroColor => m_Color;
+    public Color HeroColor => new Color(m_ColorR, m_ColorG, m_ColorB);
     public int AttackDamage => m_AttackDamage;
     public int Experience => m_Experience;
 
-    public int HashCode => 
-        heroInfo == null ? m_HeroName.GetHashCode() : heroInfo.HashCode();
+    public int HashCode =>
+        m_HeroName.GetHashCode();
 
     public void UpdateHealth(int newValue) => Health = newValue;
 
@@ -62,15 +64,13 @@ public class HeroData
 
     public HeroData(HeroInfoBase info)
     {
-        heroInfo = info;
-
-        SetHeroData(new KeyValuePair<string, Color>(heroInfo.heroName, heroInfo.heroColor), heroInfo.baseHealth, heroInfo.attackDamage, heroInfo.isEnemy);
+        SetHeroData(new KeyValuePair<string, Color>(info.heroName, info.heroColor), info.baseHealth, info.attackDamage, info.isEnemy);
     }
 
     public HeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy) =>
         SetHeroData(heroAttributes, health, attackDamage, isEnemy);
 
-    public HeroData() => heroInfo = null;
+    public HeroData() { }
 
     public void SetHeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy)
     {
@@ -84,7 +84,8 @@ public class HeroData
 
         IsEnemy = isEnemy;
         m_HeroName = heroAttributes.Key;
-        m_Color = heroAttributes.Value;
+        Color color = heroAttributes.Value;
+        (m_ColorR, m_ColorG, m_ColorB) = (color.r, color.g, color.b);
         m_AttackDamage = attackDamage;
         m_Health = m_MaxHealth = health;
     }
@@ -92,10 +93,8 @@ public class HeroData
     public string ToolTip()
     {
         StringBuilder sBuilder = null;
-        if (heroInfo != null)
-            sBuilder = new StringBuilder(heroInfo.GetToolTip());
-        else
-            sBuilder = new StringBuilder(DefaultToolTip);
+        
+        sBuilder = new StringBuilder(DefaultToolTip);
 
         sBuilder.Replace("{NAME}", m_HeroName);
         sBuilder.Replace("{DAMAGE}", m_AttackDamage.ToString());

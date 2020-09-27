@@ -45,19 +45,47 @@ public class BattleScene : MonoBehaviour
         m_TurnText.text = PLAYER_TURN_TEXT;
     }
 
+    void LoadBattleSceneSettings()
+    {
+        if (CurrentFightSettings == null) return;
+
+        if (!IsPlayerTurn)
+        {
+            m_TurnText.text = ENEMY_TURN_TEXT;
+            EnemyPlay();
+        }
+        else
+            m_TurnText.text = PLAYER_TURN_TEXT;
+
+        if (!IsFighting)
+        {
+            if (!CurrentFightSettings.isRewardingComplete)
+            {
+                if (m_AliveEnemyHeroCount == 0) OnVictory();
+                else if (m_AlivePlayerHeroCount == 0) OnDefeat(); 
+            }
+        }
+    }
+
     public void UpdateHeroes(HeroData[] playerHeroes, HeroData[] enemyHeroes)
     {
-        IsAttackInProgress = false;
-        IsPlayerTurn = true;
-
+        m_AlivePlayerHeroCount = 0;
+        m_AliveEnemyHeroCount = 0;
         for (int i = 0; i < playerHeroes.Length; ++i)
+        {
             m_PlayerHeroes[i].ResetBattleHero(playerHeroes[i]);
 
+            if (m_PlayerHeroes[i].IsAlive)
+                ++m_AlivePlayerHeroCount;
+        }
+
         for (int i = 0; i < enemyHeroes.Length; ++i)
+        {
             m_EnemyHeroes[i].ResetBattleHero(enemyHeroes[i]);
 
-        m_AlivePlayerHeroCount = playerHeroes.Length;
-        m_AliveEnemyHeroCount = enemyHeroes.Length;
+            if (m_EnemyHeroes[i].IsAlive)
+                ++m_AliveEnemyHeroCount;
+        }
 
         OnFightStart();
     }
@@ -67,6 +95,9 @@ public class BattleScene : MonoBehaviour
         UpdateHeroes(fightSettings.playerSide, fightSettings.enemySide);
 
         CurrentFightSettings = fightSettings;
+
+        IsAttackInProgress = false;
+        IsPlayerTurn = fightSettings.isPlayerTurn;
     }
 
     BattleHero GetHeroWithCondition(BattleHero[] battleHeroes, Func<BattleHero, bool> predicate)
@@ -106,6 +137,8 @@ public class BattleScene : MonoBehaviour
         EventMessenger.AddListener<BattleHero>(FightEvents.HERO_DIED, OnHeroDied);
         EventMessenger.AddListener(FightEvents.ALL_ALLY_DEAD, OnDefeat);
         EventMessenger.AddListener(FightEvents.ALL_ENEMY_DEAD, OnVictory);
+
+        EventMessenger.AddListener(SaveEvents.LOADING_SAVE_COMPLETED, LoadBattleSceneSettings);
     }
 
     IEnumerator VictoryRoutine()
@@ -115,33 +148,32 @@ public class BattleScene : MonoBehaviour
         BattleHero[] alivePlayerHeroes = m_PlayerHeroes.Where(hero => hero.IsAlive)
                                                        .ToArray();
 
-        if (alivePlayerHeroes != null)
+        
+        foreach (BattleHero hero in alivePlayerHeroes)
+            hero.RewardHero();
+
+        CurrentFightSettings.isRewardingComplete = true;
+        CurrentFightSettings.isFighting = false;
+
+        while (true)
         {
+            bool allReady = true;
 
             foreach (BattleHero hero in alivePlayerHeroes)
-                hero.RewardHero();
-
-            CurrentFightSettings.isRewardingComplete = true;
-
-            while (true)
             {
-                bool allReady = true;
-
-                foreach (BattleHero hero in alivePlayerHeroes)
+                if (!hero.isRewardingComplete)
                 {
-                    if (!hero.isRewardingComplete)
-                    {
-                        allReady = false;
-                        break;
-                    }
-                }
-
-                if (allReady)
+                    allReady = false;
                     break;
-
-                yield return null;
+                }
             }
+
+            if (allReady)
+                break;
+
+            yield return null;
         }
+        
         
         EventMessenger.NotifyEvent(SceneEvents.REWARDING_COMPLETE);
 
@@ -194,6 +226,8 @@ public class BattleScene : MonoBehaviour
         CurrentFightSettings.isPlayerTurn = !CurrentFightSettings.isPlayerTurn;
         IsPlayerTurn = CurrentFightSettings.isPlayerTurn;
 
+        // Save Game State
+
         if (!IsPlayerTurn)
             EnemyPlay();
 
@@ -201,7 +235,6 @@ public class BattleScene : MonoBehaviour
            m_AlivePlayerHeroCount != 0)
             UpdateTurnText();
 
-        // Save Game State
     }
 
     void AttackSignalGiven()

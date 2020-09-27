@@ -5,6 +5,13 @@
     public const string LOADING_FINISHED = "LOADING_FINISHED";
 }
 
+
+public static class SaveEvents
+{
+    public const string SAVE_GAME_STATE = "SAVE_GAME_STATE";
+    public const string LOADING_SAVE_COMPLETED = "LOADING_SAVE_COMPLETED";
+}
+
 public static class SelectionEvents
 {
     public const string HERO_FRAME_SELECTED = "HERO_FRAME_SELECTED";

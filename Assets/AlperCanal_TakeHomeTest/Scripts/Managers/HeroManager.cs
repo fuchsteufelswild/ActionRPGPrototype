@@ -37,6 +37,9 @@ public class HeroManager : ManagerBase,
             m_OwnedHeroes.Add(HeroFactory.GetNewAllyHero());
             // Save Here
         }
+
+
+        EventMessenger.NotifyEvent(HeroEvents.HERO_ADDED);
     }
 
     IEnumerator IGameManager.Init()
@@ -57,7 +60,6 @@ public class HeroManager : ManagerBase,
         for (int i = 0; i < INITIAL_HERO_COUNT; ++i)
             m_OwnedHeroes.Add(HeroFactory.GetNewAllyHero());
 
-        EventMessenger.NotifyEvent(HeroEvents.HERO_ADDED);
     }
 
     void IGameManager.UpdateData(object data)
@@ -68,7 +70,17 @@ public class HeroManager : ManagerBase,
             return;
         }
     
-        m_OwnedHeroes = data as List<HeroData>;   
+        m_OwnedHeroes = data as List<HeroData>;
+
+        HeroFactory.UpdateAvailableHeros();
+
+        Dictionary<int, HeroInfoBase> dict = HeroInfoBase.data;
+
+        foreach(HeroData hero in m_OwnedHeroes)
+        {
+            dict.Remove(hero.HashCode);
+        }
+
     }
    
 }

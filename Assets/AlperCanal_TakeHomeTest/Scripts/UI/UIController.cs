@@ -28,11 +28,7 @@ public class UIController : MonoBehaviour
 
     void LoadMenu()
     {
-        Refresh();
-
-        m_BattleButton.interactable = false;
-        m_GameMenu.gameObject.SetActive(true);
-        m_BattleScene.gameObject.SetActive(false);
+        SetupUIForMenu();
 
         EventMessenger.NotifyEvent<int, int>(LoadingEvents.LOADING_PROGRESS, 1, 1);
         EventMessenger.NotifyEvent(LoadingEvents.LOADING_FINISHED);
@@ -42,8 +38,22 @@ public class UIController : MonoBehaviour
     {
         EventMessenger.NotifyEvent(SceneEvents.BATTLE_START_SIGNAL);
 
+        SetupUIForFight();
+    }
+
+    public void SetupUIForFight()
+    {
         m_GameMenu.gameObject.SetActive(false);
         m_BattleScene.gameObject.SetActive(true);
+    }
+
+    public void SetupUIForMenu()
+    {
+        Refresh();
+
+        m_BattleButton.interactable = false;
+        m_GameMenu.gameObject.SetActive(true);
+        m_BattleScene.gameObject.SetActive(false);
     }
 
     void OnHeroSelected(HeroData hero)

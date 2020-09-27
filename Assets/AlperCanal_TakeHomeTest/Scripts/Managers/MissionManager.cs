@@ -119,11 +119,7 @@ public class MissionManager : ManagerBase,
         fightSettings.isPlayerTurn = true;
         fightSettings.isRewardingComplete = false;
 
-
-
-        // Save Here
-
-        
+        // Save Here    
 
         yield return null;
 
@@ -190,6 +186,28 @@ public class MissionManager : ManagerBase,
 
     void IGameManager.UpdateData(object data)
     {
+        if (data == null) return;
+
         fightSettings = data as FightSettings;
+
+        if (fightSettings.isFighting)
+        {
+            // Important
+
+            foreach (HeroData hero in fightSettings.playerSide)
+                m_SelectedHeroes.Add(hero);
+
+            foreach (HeroData hero in fightSettings.enemySide)
+                m_EnemyHeroes.Add(hero);
+
+            m_BattleScene.PrepareBattleScene(fightSettings);
+
+            FindObjectOfType<UIController>().SetupUIForFight();
+        }
+        else
+        {
+            FindObjectOfType<UIController>().SetupUIForMenu();
+        }
+
     }
 }

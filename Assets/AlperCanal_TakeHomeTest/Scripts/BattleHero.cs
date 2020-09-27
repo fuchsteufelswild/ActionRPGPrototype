@@ -40,7 +40,14 @@ public class BattleHero : HeroBase
     {
         base.SetHeroData(hero);
 
-        m_HealthBar.SetFillAmount(1);
+        float amount = (float)m_Hero.Health / m_Hero.MaxHealth;
+
+        if(amount <= 0)
+        {
+            m_HeroImage.color = m_DeadColor;
+        }
+
+        m_HealthBar.SetFillAmount(amount);
     }
 
     protected override void Start()
