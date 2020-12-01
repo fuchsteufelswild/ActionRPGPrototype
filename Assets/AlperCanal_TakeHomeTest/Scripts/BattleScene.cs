@@ -1,10 +1,10 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Linq;
 using System.Text;
+using TMPro;
 
 public class BattleScene : MonoBehaviour
 {
@@ -12,6 +12,9 @@ public class BattleScene : MonoBehaviour
     const string ENEMY_TURN_TEXT = "ENEMY TURN";
     const string VICTORY_TEXT = "VICTORY!";
     const string DEFEAT_TEXT = "DEFEAT";
+
+    public static bool IsAttackInProgress = false;
+    public static bool IsPlayerTurn = true;
 
     [SerializeField] BattleHero[] m_PlayerHeroes;
     [SerializeField] BattleHero[] m_EnemyHeroes;
@@ -22,26 +25,60 @@ public class BattleScene : MonoBehaviour
     [SerializeField] Transform m_AttackEffects;
     [SerializeField] Transform m_AttributeChangeEffects;
 
-    [SerializeField] Button m_BackButton;
-    [SerializeField] Text m_TurnText;
+    [SerializeField] GameObject m_BackButton;
+    [SerializeField] TextMeshProUGUI m_TurnText;
 
-    public static bool IsAttackInProgress = false;
-    public static bool IsPlayerTurn = true;
+    
     public bool IsFighting => m_AlivePlayerHeroCount != 0 && m_AliveEnemyHeroCount != 0;
 
     GameObjectPool<AttackEffect> m_AttackEffecPool;
     public static GameObjectPool<AttributeChange> AttribueChangeEffectPool;
 
-    public MissionManager.FightSettings CurrentFightSettings { get; set; }
-    
+    MissionManager.FightSettings CurrentFightSettings { get; set; }
 
     int m_InitialPoolSize = 3;
     int m_AlivePlayerHeroCount = 0;
     int m_AliveEnemyHeroCount = 0;
 
+    int FindHeroIndex(BattleHero[] heroes, BattleHero hero)
+    {
+        for (int i = 0; i < heroes.Length; ++i)
+            if (heroes[i] == hero)
+                return i;
+
+        return -1;
+    }
+
+    BattleHero FindBattleHeroOnIndex(BattleHero[] heroes, int index)
+    {
+        if(index >= 0 &&
+           index < heroes.Length)
+            return heroes[index];
+
+        return null;
+    }
+
+    public int GetIndexOfBattleHero(BattleHero hero)
+    {
+        int result = FindHeroIndex(m_PlayerHeroes, hero);
+
+        if (result != -1) return result;
+
+        return FindHeroIndex(m_EnemyHeroes, hero);
+    }
+
+    public BattleHero GetBattleHeroOnIndex(int index)
+    {
+        BattleHero result = FindBattleHeroOnIndex(m_PlayerHeroes, index);
+
+        if (result != null) return result;
+
+        return FindBattleHeroOnIndex(m_EnemyHeroes, index);
+    }
+
     void OnFightStart()
     {
-        // m_BackButton.gameObject.SetActive(false);
+        m_BackButton.gameObject.SetActive(false);
         m_TurnText.text = PLAYER_TURN_TEXT;
     }
 
@@ -49,25 +86,32 @@ public class BattleScene : MonoBehaviour
     {
         if (CurrentFightSettings == null) return;
 
-        if (!IsPlayerTurn)
-        {
-            m_TurnText.text = ENEMY_TURN_TEXT;
-            EnemyPlay();
-        }
-        else
-            m_TurnText.text = PLAYER_TURN_TEXT;
+        UpdateTurnText();
 
         if (!IsFighting)
         {
             if (!CurrentFightSettings.isRewardingComplete)
             {
                 if (m_AliveEnemyHeroCount == 0) OnVictory();
-                else if (m_AlivePlayerHeroCount == 0) OnDefeat(); 
+                else if (m_AlivePlayerHeroCount == 0) OnDefeat();
             }
+            else if(CurrentFightSettings.isFighting)
+                m_BackButton.gameObject.SetActive(true);
+        }   
+
+        // Preserve latest selected enemy and its target selection
+        if(CurrentFightSettings.selectedEnemyIndex != -1 &&
+           CurrentFightSettings.selectedAllyHeroIndex != -1)
+        {
+                FindBattleHeroOnIndex(m_EnemyHeroes, CurrentFightSettings.selectedEnemyIndex).
+                    selectedTargetIndex = CurrentFightSettings.selectedAllyHeroIndex;
         }
+
+        if (!IsPlayerTurn)
+            EnemyPlay();
     }
 
-    public void UpdateHeroes(HeroData[] playerHeroes, HeroData[] enemyHeroes)
+    void UpdateHeroes(HeroData[] playerHeroes, HeroData[] enemyHeroes)
     {
         m_AlivePlayerHeroCount = 0;
         m_AliveEnemyHeroCount = 0;
@@ -125,6 +169,9 @@ public class BattleScene : MonoBehaviour
         Debug.Assert(m_PlayerHeroes.Length >= MissionManager.PLAYER_SIDE_COUNT &&
                      m_EnemyHeroes.Length >= MissionManager.ENEMY_SIDE_COUNT);
 
+        m_BackButton = transform.Find("MainMenuButton").gameObject;
+        m_BackButton.GetComponent<Button>().onClick.AddListener(() => EventMessenger.NotifyEvent(SceneEvents.REWARDING_COMPLETE));
+
         m_AttackEffecPool = new GameObjectPool<AttackEffect>(3, m_AttackEffects, m_AttackEffectPrefab);
         AttribueChangeEffectPool = new GameObjectPool<AttributeChange>(4, m_AttributeChangeEffects, m_AttribueChangeEffectPrefab);
 
@@ -141,6 +188,20 @@ public class BattleScene : MonoBehaviour
         EventMessenger.AddListener(SaveEvents.LOADING_SAVE_COMPLETED, LoadBattleSceneSettings);
     }
 
+    void EndBattle() =>
+        m_BackButton.SetActive(true);
+
+    private void OnDestroy()
+    {
+        EventMessenger.RemoveListener(FightEvents.ATTACK_SIGNAL_GIVEN, AttackSignalGiven);
+        EventMessenger.RemoveListener(FightEvents.ATTACK_COMPLETED, AttackCompleted);
+        EventMessenger.RemoveListener<BattleHero, int>(FightEvents.DAMAGE_DONE, DamageDoneOnHero);
+        EventMessenger.RemoveListener<BattleHero>(FightEvents.HERO_DIED, OnHeroDied);
+        EventMessenger.RemoveListener(FightEvents.ALL_ALLY_DEAD, OnDefeat);
+        EventMessenger.RemoveListener(FightEvents.ALL_ENEMY_DEAD, OnVictory);
+        EventMessenger.RemoveListener(SaveEvents.LOADING_SAVE_COMPLETED, LoadBattleSceneSettings);
+    }
+
     IEnumerator VictoryRoutine()
     {
         m_TurnText.text = VICTORY_TEXT;
@@ -148,12 +209,10 @@ public class BattleScene : MonoBehaviour
         BattleHero[] alivePlayerHeroes = m_PlayerHeroes.Where(hero => hero.IsAlive)
                                                        .ToArray();
 
-        
         foreach (BattleHero hero in alivePlayerHeroes)
             hero.RewardHero();
 
         CurrentFightSettings.isRewardingComplete = true;
-        CurrentFightSettings.isFighting = false;
 
         while (true)
         {
@@ -161,7 +220,7 @@ public class BattleScene : MonoBehaviour
 
             foreach (BattleHero hero in alivePlayerHeroes)
             {
-                if (!hero.isRewardingComplete)
+                if (!hero.IsRewardingComplete)
                 {
                     allReady = false;
                     break;
@@ -173,9 +232,9 @@ public class BattleScene : MonoBehaviour
 
             yield return null;
         }
-        
-        
-        EventMessenger.NotifyEvent(SceneEvents.REWARDING_COMPLETE);
+
+
+        EndBattle();
 
     }
 
@@ -185,35 +244,41 @@ public class BattleScene : MonoBehaviour
 
         CurrentFightSettings.isRewardingComplete = true;
 
-        yield return new WaitForSeconds(2f);
+        yield return null;
 
-        EventMessenger.NotifyEvent(SceneEvents.REWARDING_COMPLETE);
+        EndBattle();
     }
 
-    void OnVictory()
-    {
+    void OnVictory() =>
         StartCoroutine(VictoryRoutine());
-        
-    }
     
-
-    void OnDefeat()
-    {
+    void OnDefeat() =>
         StartCoroutine(DefatRoutine());
-    }
 
     void EnemyPlay()
     {
         if (m_PlayerHeroes.Length <= 0) return;
 
-        BattleHero enemy = GetAliveHero(m_EnemyHeroes);
+        BattleHero enemy = null;
+        if (CurrentFightSettings.selectedEnemyIndex == -1)
+            enemy = GetAliveHero(m_EnemyHeroes);
+        else
+            enemy = FindBattleHeroOnIndex(m_EnemyHeroes, CurrentFightSettings.selectedEnemyIndex);
+
+        CurrentFightSettings.selectedEnemyIndex = FindHeroIndex(m_EnemyHeroes, enemy);
+
+        EventMessenger.NotifyEvent(SaveEvents.SAVE_GAME_STATE);
 
         enemy?.PerformAttack();
     }
 
     void UpdateTurnText()
     {
-        if (IsPlayerTurn)
+        if (m_AlivePlayerHeroCount == 0)
+            m_TurnText.text = DEFEAT_TEXT;
+        else if (m_AliveEnemyHeroCount == 0)
+            m_TurnText.text = VICTORY_TEXT;
+        else if (IsPlayerTurn)
             m_TurnText.text = PLAYER_TURN_TEXT;
         else
             m_TurnText.text = ENEMY_TURN_TEXT;
@@ -227,30 +292,34 @@ public class BattleScene : MonoBehaviour
         IsPlayerTurn = CurrentFightSettings.isPlayerTurn;
 
         // Save Game State
+        
+        if(m_AlivePlayerHeroCount == 0)
+            EventMessenger.NotifyEvent(FightEvents.ALL_ALLY_DEAD);
+        else if(m_AliveEnemyHeroCount == 0)
+            EventMessenger.NotifyEvent(FightEvents.ALL_ENEMY_DEAD);
 
-        if (!IsPlayerTurn)
-            EnemyPlay();
+        CurrentFightSettings.selectedAllyHeroIndex = -1;
+        CurrentFightSettings.selectedEnemyIndex = -1;
 
-        if(m_AliveEnemyHeroCount != 0 &&
+        EventMessenger.NotifyEvent(SaveEvents.SAVE_GAME_STATE);
+
+        if (m_AliveEnemyHeroCount != 0 &&
            m_AlivePlayerHeroCount != 0)
             UpdateTurnText();
 
+        if (!IsPlayerTurn)
+            EnemyPlay();
     }
 
-    void AttackSignalGiven()
-    {
+    void AttackSignalGiven() =>
         IsAttackInProgress = true;
-    }
 
     void OnHeroDied(BattleHero hero)
     {
         if (hero.IsEnemy)
-        {
-            if (--m_AliveEnemyHeroCount <= 0)
-                EventMessenger.NotifyEvent(FightEvents.ALL_ENEMY_DEAD);
-        }
-        else if (--m_AlivePlayerHeroCount <= 0)
-            EventMessenger.NotifyEvent(FightEvents.ALL_ALLY_DEAD);
+            --m_AliveEnemyHeroCount;
+        else
+            --m_AlivePlayerHeroCount;
     }
 
     void DamageDoneOnHero(BattleHero hero, int damage)
@@ -264,10 +333,13 @@ public class BattleScene : MonoBehaviour
         builder.Replace("{DECREASE}", damage.ToString());
 
         AttributeChange attributeChange = AttribueChangeEffectPool.GetItem();
-
         attributeChange.PrepareForActivation(hero.transform, false, builder.ToString());
         attributeChange.gameObject.SetActive(true);
 
+        if (!hero.IsEnemy)
+            CurrentFightSettings.selectedAllyHeroIndex = FindHeroIndex(m_PlayerHeroes, hero);
+
+        EventMessenger.NotifyEvent(SaveEvents.SAVE_GAME_STATE);
 
         bool isDead = hero.TakeDamage(damage);
     }

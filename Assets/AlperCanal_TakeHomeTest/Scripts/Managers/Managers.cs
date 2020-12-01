@@ -18,9 +18,12 @@ public class Managers : MonoBehaviour
 
     List<IGameManager> managers;
 
+    void GameReset() =>
+        StartCoroutine(StartUp());
+
     private void Awake()
     {
-        DontDestroyOnLoad(this);
+        EventMessenger.AddListener(SaveEvents.GAME_RESET, GameReset);
 
         managers = new List<IGameManager>();
 
@@ -29,6 +32,7 @@ public class Managers : MonoBehaviour
         DataManager = GetComponent<DataManager>();
         AudioManager = GetComponentInChildren<AudioManager>();
 
+        // Make sure data manager added last
         managers.Add(HeroManager);
         managers.Add(MissionManager);
         managers.Add(DataManager);
@@ -44,12 +48,13 @@ public class Managers : MonoBehaviour
 
         WaitForSeconds waitForSeconds = new WaitForSeconds(0.1f);
 
-        foreach (IGameManager gameManager in managers)
-            StartCoroutine(gameManager.Init());
+        // Initialize everything but DataManager
+        for (int i = 0; i < managers.Count - 1; ++i)
+            StartCoroutine(managers[i].Init());
 
         int readyCount = 0;
 
-        while(readyCount < managers.Count)
+        while(readyCount < managers.Count - 1)
         {
             int currentReadyCount = 0;
 
@@ -66,6 +71,13 @@ public class Managers : MonoBehaviour
 
             yield return waitForSeconds;
         }
+
+        // Initialize DataManager last since it will set other managers up
+        IGameManager dataMan = managers[managers.Count - 1];
+        StartCoroutine(dataMan.Init());
+        while (!dataMan.IsReady()) yield return waitForSeconds;
+
+        EventMessenger.NotifyEvent(LoadingEvents.LOADING_PROGRESS, 1, 1);
 
         EventMessenger.NotifyEvent(LoadingEvents.LOADING_FINISHED);
     }

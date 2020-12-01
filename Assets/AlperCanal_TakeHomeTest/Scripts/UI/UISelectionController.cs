@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using System;
+using TMPro;
 
 public class UISelectionController : MonoBehaviour
 {
@@ -32,11 +33,9 @@ public class UISelectionController : MonoBehaviour
     void ShowTooltip(HeroBase target)
     {
         isShowingTooltip = true;
-
-        Vector2 pos = GetTooltipPosition(target.transform.position, target.GetComponent<RectTransform>());
-
-        m_ToolTip.transform.position = pos;
-        m_ToolTip.GetComponentInChildren<UnityEngine.UI.Text>().text = target.UITooltip;
+        
+        m_ToolTip.transform.position = target.transform.position;
+        m_ToolTip.GetComponentInChildren<TextMeshProUGUI>().text = target.UITooltip;
 
         m_ToolTip.SetActive(true);
     }

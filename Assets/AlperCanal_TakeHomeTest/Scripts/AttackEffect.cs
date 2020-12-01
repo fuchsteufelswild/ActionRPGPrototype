@@ -5,10 +5,8 @@ public class AttackEffect : MonoBehaviour
     Animator m_Animator;
     RectTransform m_RectTransform;
 
-    public void RegulateSize(RectTransform target)
-    {
+    public void RegulateSize(RectTransform target) =>
         m_RectTransform.sizeDelta = target.sizeDelta;
-    }
 
     private void Awake()
     {
@@ -21,9 +19,7 @@ public class AttackEffect : MonoBehaviour
         if(m_Animator != null) m_Animator.SetTrigger("PlayAttackAnimation");
     }
 
-    void OnAnimationFinished()
-    {
+    void OnAnimationFinished() =>
         gameObject.SetActive(false);
-    }
 
 }

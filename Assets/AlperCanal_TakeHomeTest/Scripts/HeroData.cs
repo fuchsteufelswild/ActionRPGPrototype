@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using System.Text;
+using System;
 
 [System.Serializable]
 public class HeroData
@@ -11,7 +11,9 @@ public class HeroData
     public bool IsInitialzied { get; private set; }
     public bool IsEnemy { get; private set; }
 
-    const int MaximumExperience = 1; 
+    public Func<int, int> AttributeIncreaseFunction;
+
+    const int MaximumExperience = 5; 
 
     int m_AttackDamage;
     int m_Health;
@@ -24,7 +26,7 @@ public class HeroData
     float m_ColorG;
     float m_ColorB;
 
-    public int Health { get => m_Health; private set => m_Health = value; } 
+    public int Health => m_Health;
     public int MaxHealth => m_MaxHealth;
     public int Level => m_Level;
     public string HeroName => m_HeroName;
@@ -32,10 +34,12 @@ public class HeroData
     public int AttackDamage => m_AttackDamage;
     public int Experience => m_Experience;
 
+
+    public bool CreatedFromRecipe { get; private set; }
     public int HashCode =>
         m_HeroName.GetHashCode();
 
-    public void UpdateHealth(int newValue) => Health = newValue;
+    public void UpdateHealth(int newValue) => m_Health = newValue;
 
     public void ResetHealth() => m_Health = m_MaxHealth;
 
@@ -49,56 +53,61 @@ public class HeroData
 
     public void LevelUp()
     {
-        m_AttackDamage = (int)(m_AttackDamage * 1.1f);
-        m_MaxHealth = (int)(m_MaxHealth * 1.1f);
+        m_AttackDamage = AttributeIncreaseFunction(m_AttackDamage);
+        m_MaxHealth = AttributeIncreaseFunction(m_MaxHealth);
+        m_Health = AttributeIncreaseFunction(m_Health);
         ++m_Level;
         m_Experience = 0;
     }
 
-    void SetDefaults()
+    void SetDefaults(bool isEnemy)
     {
         m_Experience = 0;
         m_Level = 1;
         IsInitialzied = true;
+
+        if(isEnemy)
+        {
+            m_Experience = UnityEngine.Random.Range(0, MaximumExperience);
+            m_Level = UnityEngine.Random.Range(1, 10);
+        }
     }
 
-    public HeroData(HeroInfoBase info)
-    {
-        SetHeroData(new KeyValuePair<string, Color>(info.heroName, info.heroColor), info.baseHealth, info.attackDamage, info.isEnemy);
-    }
+    public HeroData(HeroInfoBase info) =>
+        SetHeroData(new KeyValuePair<string, Color>(info.heroName, info.heroColor), info.baseHealth, info.attackDamage, info.isEnemy, true);
 
     public HeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy) =>
-        SetHeroData(heroAttributes, health, attackDamage, isEnemy);
+        SetHeroData(heroAttributes, health, attackDamage, isEnemy, false);
 
-    public HeroData() { }
-
-    public void SetHeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy)
+    void SetHeroData(KeyValuePair<string, Color> heroAttributes, int health, int attackDamage, bool isEnemy, bool createdFromRecipe)
     {
         if (IsInitialzied)
         {
             Debug.LogError("Hero already has initialized data");
             return;
         }
+        CreatedFromRecipe = createdFromRecipe;
+        AttributeIncreaseFunction = (value) => (int)(value * 1.1f);
 
-        SetDefaults();
+        SetDefaults(isEnemy);
 
         IsEnemy = isEnemy;
         m_HeroName = heroAttributes.Key;
+
         Color color = heroAttributes.Value;
         (m_ColorR, m_ColorG, m_ColorB) = (color.r, color.g, color.b);
+
         m_AttackDamage = attackDamage;
         m_Health = m_MaxHealth = health;
     }
 
     public string ToolTip()
     {
-        StringBuilder sBuilder = null;
-        
-        sBuilder = new StringBuilder(DefaultToolTip);
+        StringBuilder sBuilder = new StringBuilder(DefaultToolTip);
 
         sBuilder.Replace("{NAME}", m_HeroName);
         sBuilder.Replace("{DAMAGE}", m_AttackDamage.ToString());
-        sBuilder.Replace("{HEALTH}", m_MaxHealth.ToString());
+        sBuilder.Replace("{HEALTH}", m_Health.ToString());
         sBuilder.Replace("{LEVEL}", m_Level.ToString());
         sBuilder.Replace("{EXPERIENCE}", m_Experience.ToString());
 

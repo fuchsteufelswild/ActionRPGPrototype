@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
+using System.Linq;
 
 public class HeroManager : ManagerBase,
                            IGameManager
@@ -26,8 +27,6 @@ public class HeroManager : ManagerBase,
 
     object IGameManager.GetData() => m_OwnedHeroes;
 
-    public List<HeroData> HeroData => m_OwnedHeroes;
-
     public HeroData[] HeroDataArray => m_OwnedHeroes.ToArray();
 
     public void AddNewHero()
@@ -35,15 +34,39 @@ public class HeroManager : ManagerBase,
         if (m_OwnedHeroes.Count < 10)
         {
             m_OwnedHeroes.Add(HeroFactory.GetNewAllyHero());
-            // Save Here
+            EventMessenger.NotifyEvent(SaveEvents.SAVE_GAME_STATE);
         }
 
 
         EventMessenger.NotifyEvent(HeroEvents.HERO_ADDED);
     }
 
+    void AddUsedHeroes()
+    {
+        if (m_OwnedHeroes == null) return;
+
+
+        Dictionary<int, HeroInfoBase> dict = HeroInfoBase.data;
+
+        foreach (HeroData hero in m_OwnedHeroes.Where(hero => hero.CreatedFromRecipe))
+            dict[hero.HashCode] = Resources.FindObjectsOfTypeAll<HeroInfoBase>().Where(heroBase => heroBase.heroName == hero.HeroName).First();
+
+        HeroFactory.ResetAvailableHeroes();
+    }
+
+    void RemoveUsedHeroes()
+    {
+        HeroFactory.UpdateAvailableHeros();
+
+        Dictionary<int, HeroInfoBase> dict = HeroInfoBase.data;
+        foreach (HeroData hero in m_OwnedHeroes)
+            dict.Remove(hero.HashCode);
+    }
+
     IEnumerator IGameManager.Init()
     {
+        AddUsedHeroes();
+
         m_OwnedHeroes = new List<HeroData>();
 
         m_Status = ManagerStatus.LOADING;       
@@ -58,8 +81,7 @@ public class HeroManager : ManagerBase,
     void CreateInitialHeroes()
     {
         for (int i = 0; i < INITIAL_HERO_COUNT; ++i)
-            m_OwnedHeroes.Add(HeroFactory.GetNewAllyHero());
-
+            AddNewHero();
     }
 
     void IGameManager.UpdateData(object data)
@@ -71,16 +93,8 @@ public class HeroManager : ManagerBase,
         }
     
         m_OwnedHeroes = data as List<HeroData>;
-
-        HeroFactory.UpdateAvailableHeros();
-
-        Dictionary<int, HeroInfoBase> dict = HeroInfoBase.data;
-
-        foreach(HeroData hero in m_OwnedHeroes)
-        {
-            dict.Remove(hero.HashCode);
-        }
-
+        
+        RemoveUsedHeroes();
     }
    
 }

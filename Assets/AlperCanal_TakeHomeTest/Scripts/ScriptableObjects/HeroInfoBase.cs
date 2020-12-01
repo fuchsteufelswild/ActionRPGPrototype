@@ -12,7 +12,7 @@ public class HeroInfoBase : ScriptableObject
 
     [HideInInspector] public bool isEnemy;
 
-    [TextArea] public string toolTip = HeroData.DefaultToolTip;
+    [HideInInspector] [TextArea] public string toolTip = HeroData.DefaultToolTip;
 
     public int HashCode() => heroName.GetHashCode();
     public string GetToolTip() => toolTip;

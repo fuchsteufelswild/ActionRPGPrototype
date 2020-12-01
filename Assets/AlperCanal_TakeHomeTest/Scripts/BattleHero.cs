@@ -1,20 +1,34 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Text;
 
 public class BattleHero : HeroBase
 {
-    public bool IsAlive => m_Hero.Health > 0;
-    public bool IsEnemy => m_Hero.IsEnemy;
+    const float Multiplier = 0.00026f; // 1 / (1920 * 2)
 
     [SerializeField] Color m_DeadColor;
 
     [SerializeField] DynamicFillBar m_HealthBar;
     [SerializeField] float m_AttackDuration;
 
-    float m_OffsetX;
+    public bool IsAlive => m_Hero.Health > 0;
+    public bool IsEnemy => m_Hero.IsEnemy;
+    public bool IsRewardingComplete { get; private set; }
+
+    public int selectedTargetIndex;
+
+    float OffsetX
+    {
+        get
+        {
+            int attackDirection = m_Hero != null ? (m_Hero.IsEnemy ? -1 : 1) : 1;
+            return attackDirection * m_RectTransform.sizeDelta.x * Multiplier * Screen.width;
+        }
+    }
+
+    WaitForSeconds waitForSeconds = new WaitForSeconds(0.5f);
+    WaitForEndOfFrame waitForEndOfFrame = new WaitForEndOfFrame();
 
     Vector3 m_AttackEndPosition;
     Vector3 m_AttackBeginPosition;
@@ -26,23 +40,13 @@ public class BattleHero : HeroBase
 
     BattleHero target;
 
-    public bool isRewardingComplete = false;
-
-    WaitForSeconds waitForSeconds = new WaitForSeconds(0.5f);
-    WaitForEndOfFrame waitForEndOfFrame = new WaitForEndOfFrame();
-
-    public void SetTarget(GameObject target)
-    {
-        this.target = target.GetComponent<BattleHero>();
-    }
-
     public void ResetBattleHero(HeroData hero)
     {
         base.SetHeroData(hero);
 
         float amount = (float)m_Hero.Health / m_Hero.MaxHealth;
-
-        if(amount <= 0)
+        selectedTargetIndex = -1;
+        if (amount <= 0)
         {
             m_HeroImage.color = m_DeadColor;
         }
@@ -50,18 +54,18 @@ public class BattleHero : HeroBase
         m_HealthBar.SetFillAmount(amount);
     }
 
+    void SetEndPosition() =>
+        m_AttackEndPosition = transform.position + new Vector3(OffsetX, 0, 0);
+
     protected override void Start()
     {
         base.Start();
 
         m_AttackBeginPosition = transform.position;
         m_RectTransform = GetComponent<RectTransform>();
-        m_OffsetX = m_RectTransform.sizeDelta.x * .5f * Screen.width / 1920;
+        SetEndPosition();
 
-        m_AttackEndPosition = transform.position + new Vector3(m_OffsetX, 0, 0);
-
-        m_Animator = GetComponent<Animator>();
-        
+        m_Animator = GetComponent<Animator>();        
         m_TargetPicker = FindObjectOfType<BattleScene>().GetRandomAliveHero;
     }
 
@@ -72,40 +76,33 @@ public class BattleHero : HeroBase
             m_Hero.IsEnemy ||
             !IsAlive) return;
 
-        // Notify Attack Starts
-        // Attack to target
-        // Play animation of some kind
-        // Spawn Attack Effect on Target
-        // TakeDamage on target
-        // Notify Attack Ends
-
         PerformAttack();
     }
 
     public void PerformAttack()
     {
-        int attackDirection = m_Hero.IsEnemy ? -1 : 1;
-        m_OffsetX = m_RectTransform.sizeDelta.x * .5f * Screen.width / 1920;
         m_AttackBeginPosition = transform.position;
-        m_AttackEndPosition = m_AttackBeginPosition + new Vector3(attackDirection * m_OffsetX , 0, 0);
+        SetEndPosition();
 
         EventMessenger.NotifyEvent(FightEvents.ATTACK_SIGNAL_GIVEN);
 
-        target = m_TargetPicker(!m_Hero.IsEnemy);
+        if (selectedTargetIndex == -1)
+            target = m_TargetPicker(!m_Hero.IsEnemy);
+        else
+            target = FindObjectOfType<BattleScene>().GetBattleHeroOnIndex(selectedTargetIndex); // This will be called only once on first attack upon loading
 
-        if (target == null)
-            return;
+        if (target == null) return;
 
         StartCoroutine(AttackRoutine());
     }
 
-    void DoingDamage()
-    {
+    void DoingDamage() =>
         EventMessenger.NotifyEvent<BattleHero, int>(FightEvents.DAMAGE_DONE, target, m_Hero.AttackDamage);
-    }
 
     void AttackEnded()
     {
+        target = null;
+        selectedTargetIndex = -1;
         EventMessenger.NotifyEvent(FightEvents.ATTACK_COMPLETED);
     }
 
@@ -129,7 +126,7 @@ public class BattleHero : HeroBase
 
     public void RewardHero()
     {
-        isRewardingComplete = false;
+        IsRewardingComplete = false;
 
         int attackIncrease = -1;
         int healthIncrease = -1;
@@ -137,8 +134,8 @@ public class BattleHero : HeroBase
         if(m_Hero.IncreaseExperience())
         {
             levelUp = 1;
-            attackIncrease = (int)(m_Hero.AttackDamage * .1f);
-            healthIncrease = (int)(m_Hero.MaxHealth * .1f);
+            attackIncrease = m_Hero.AttributeIncreaseFunction(m_Hero.AttackDamage) - m_Hero.AttackDamage;
+            healthIncrease = m_Hero.AttributeIncreaseFunction(m_Hero.MaxHealth) - m_Hero.MaxHealth;
 
             m_Hero.LevelUp();
         }
@@ -157,11 +154,9 @@ public class BattleHero : HeroBase
 
     IEnumerator RewardRoutine(int attackIncrease, int healthIncrease, int levelUp)
     {
+        StringBuilder builder = new StringBuilder("");
 
-        StringBuilder builder = new StringBuilder(AttributeChange.EXPERIENCE_INCREASE_TEXT);
-        SpawnAttributeChange(builder, 1);
-
-        builder.Clear();
+        SpawnIfSuitable(1, AttributeChange.EXPERIENCE_INCREASE_TEXT);
         yield return waitForSeconds;
 
         if (SpawnIfSuitable(levelUp, AttributeChange.LEVEL_INCREASE_TEXT))
@@ -173,9 +168,7 @@ public class BattleHero : HeroBase
         if (SpawnIfSuitable(healthIncrease, AttributeChange.HEALTH_INCREASE_TEXT))
             yield return waitForSeconds;
 
-        yield return waitForSeconds;
-
-        isRewardingComplete = true;
+        IsRewardingComplete = true;
 
         bool SpawnIfSuitable(int value, string text)
         {
@@ -195,8 +188,7 @@ public class BattleHero : HeroBase
     IEnumerator AttackRoutine()
     {
         float timePassed = 0.0f;
-
-        Vector3 offset = m_AttackEndPosition - m_AttackBeginPosition;
+        
         float halfDuration = m_AttackDuration * .5f;
 
         while(timePassed <= halfDuration)

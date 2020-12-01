@@ -19,7 +19,18 @@ public class DataManager : ManagerBase,
     private void Awake()
     {
         EventMessenger.AddListener(SaveEvents.SAVE_GAME_STATE, SaveGameData);
+        EventMessenger.AddListener(SaveEvents.GAME_RESET, DeleteSave);
     }
+
+    private void OnDestroy()
+    {
+        EventMessenger.RemoveListener(SaveEvents.SAVE_GAME_STATE, SaveGameData);
+        EventMessenger.RemoveListener(SaveEvents.GAME_RESET, DeleteSave);
+    }
+
+    void DeleteSave() =>
+        File.Delete(m_FilePath);
+
 
     object IGameManager.GetData()
     {
@@ -28,19 +39,18 @@ public class DataManager : ManagerBase,
 
     IEnumerator IGameManager.Init()
     {
-        yield return new WaitForSeconds(0.1f);
-
         m_SaveMutex = new Mutex();
 
         m_Status = ManagerStatus.LOADING;
 
         m_FilePath = Path.Combine(Application.persistentDataPath, "GameData.dat");
-        m_FilePath = Path.Combine(Application.dataPath, "GameData.dat");
+        // m_FilePath = Path.Combine(Application.dataPath, "GameData.dat");
         
-
         Debug.Log("File Path " + m_FilePath);
 
         LoadGameData();
+
+        yield return null;
 
         Debug.Log("Data Manager Started");
 
@@ -56,9 +66,6 @@ public class DataManager : ManagerBase,
     {
         // Only one save at a time
         m_SaveMutex.WaitOne();
-        // Will Save Manager Datas into a file
-
-        File.Delete(m_FilePath);
 
         var currentState = new Dictionary<string, object>();
 
@@ -96,11 +103,5 @@ public class DataManager : ManagerBase,
         ((IGameManager)Managers.MissionManager).UpdateData(gameState["MissionState"]);
 
         EventMessenger.NotifyEvent(SaveEvents.LOADING_SAVE_COMPLETED);
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.K))
-            SaveGameData();
     }
 }

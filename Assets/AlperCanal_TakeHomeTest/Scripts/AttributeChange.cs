@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 public class AttributeChange : MonoBehaviour
 {
@@ -10,23 +10,22 @@ public class AttributeChange : MonoBehaviour
     public const string ATTACK_DAMAGE_INCREASE_TEXT = "ATTACK DAMAGE +{INCREASE}";
     public const string LEVEL_INCREASE_TEXT = "LEVEL +{INCREASE}";
 
-    [SerializeField] Text m_NotificationText;
+    [SerializeField] TextMeshProUGUI m_NotificationText;
 
     [SerializeField] float m_FadeoutTime;
     [SerializeField] Color m_PositiveEffectColor;
-    [SerializeField] Color m_NegativeEffectColor;    
+    [SerializeField] Color m_NegativeEffectColor;
 
-    bool initialized = false;
+    bool isInitialized = false;
 
     bool isPositiveEffect;
     RectTransform m_RectTransform;
     Vector3 m_StartPosition;
     Vector3 m_EndPosition;
-    Vector3 m_Offset;
 
     IEnumerator notificationRoutine;
     WaitForEndOfFrame waitForEndOfFrame = new WaitForEndOfFrame();
-
+    float m_OffsetMultiplier = 0.0005f;
     public void PrepareForActivation(Transform targetTransform, bool isPositiveEffect, string displayText)
     {
         this.isPositiveEffect = isPositiveEffect;
@@ -41,9 +40,7 @@ public class AttributeChange : MonoBehaviour
         Vector2 targetSize = targetTransform.GetComponent<RectTransform>().sizeDelta;
 
         m_RectTransform.sizeDelta = targetSize * .8f;
-        m_EndPosition = m_StartPosition + new Vector3(0, Screen.height * targetSize.y / 2000f, 0);
-
-        m_Offset = m_EndPosition - m_StartPosition;
+        m_EndPosition = m_StartPosition + new Vector3(0, Screen.height * targetSize.y * m_OffsetMultiplier, 0);
 
         m_NotificationText.text = displayText;
     }
@@ -57,9 +54,9 @@ public class AttributeChange : MonoBehaviour
 
     private void OnEnable()
     {
-        if(!initialized)
+        if(!isInitialized)
         {
-            initialized = true;
+            isInitialized = true;
             return;
         }
 
@@ -73,10 +70,8 @@ public class AttributeChange : MonoBehaviour
         StartCoroutine(notificationRoutine);
     }
 
-    void Deactivate()
-    {
+    void Deactivate() =>
         gameObject.SetActive(false);
-    }
 
     IEnumerator NotificationRoutine()
     {

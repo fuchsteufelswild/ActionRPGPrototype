@@ -20,19 +20,14 @@ public static class HeroFactory
     public const int ALLY_HERO_MIN_HEALTH_LIMIT = 100;
     public const int ALLY_HERO_MAX_HEALTH_LIMIT = 200;
 
-    public const int ALLY_HERO_MIN_ATTACK_LIMIT = 10;
-    public const int ALLY_HERO_MAX_ATTACK_LIMIT = 20;
+    public const int ALLY_HERO_MIN_ATTACK_LIMIT = 18;
+    public const int ALLY_HERO_MAX_ATTACK_LIMIT = 25;
 
-    public const int ENEMY_HERO_MIN_HEALTH_LIMIT = 20;
-    public const int ENEMY_HERO_MAX_HEALTH_LIMIT = 25;
+    public const int ENEMY_HERO_MIN_HEALTH_LIMIT = 300;
+    public const int ENEMY_HERO_MAX_HEALTH_LIMIT = 400;
 
-    public const int ENEMY_HERO_MIN_ATTACK_LIMIT = 200;
-    public const int ENEMY_HERO_MAX_ATTACK_LIMIT = 400;
-
-    static string[] HeroNameList = { "Vindicate", "Bionic", "Tornado", "Barrage", "Monsoon", "Glazier",
-                                     "Barracuda", "Ember", "Tempest", "Velvet", "Nebula", "Licorice",
-                                     "Iris", "Quartz", "Radiance", "Wildfire", "Bellona", "Anesthesia",
-                                     "Voyd", "Mirage"};
+    public const int ENEMY_HERO_MIN_ATTACK_LIMIT = 30;
+    public const int ENEMY_HERO_MAX_ATTACK_LIMIT = 40;
 
     /* Might read from a file or from a database
      * but preferred more simplistic approach
@@ -48,13 +43,23 @@ public static class HeroFactory
         { "Ember", Color.red },
         { "Bellona", Color.white },
         { "Mirage", Color.cyan },
-        { "Monsoon", (Color.yellow + Color.red) / 2f },
-        { "Velvet", (Color.blue + Color.magenta) / 2f}
+        { "Monsoon", (Color.yellow + Color.grey) / 2f },
+        { "Velvet", (Color.yellow + Color.magenta) / 2f}
     };
 
+    // Upon resetting game add used names
+    public static void ResetAvailableHeroes()
+    {
+        HeroData[] heroes = Managers.HeroManager.HeroDataArray;
+
+        foreach (HeroData hero in heroes.Where(hero => !hero.CreatedFromRecipe))
+            availableHeroNamesAndColors[hero.HeroName] = hero.HeroColor; 
+    }
+
+    // Remove already selected names
     public static void UpdateAvailableHeros()
     {
-        List<HeroData> heroes = Managers.HeroManager.HeroData;
+        HeroData[] heroes = Managers.HeroManager.HeroDataArray;
 
         foreach (HeroData hero in heroes)
             availableHeroNamesAndColors.Remove(hero.HeroName);
@@ -66,12 +71,11 @@ public static class HeroFactory
     // Create a Hero with random attributes
     static HeroData CreateHero(HeroIngredients data, bool isEnemy)
     {
-        HeroData newHero = new HeroData();
         KeyValuePair<string, Color> heroAttributes = GetRandomName();
         int health = Random.Range(data.healthRange.x, data.healthRange.y + 1);
         int attackDamage = Random.Range(data.attackDamageRange.x, data.attackDamageRange.y + 1);
 
-        newHero.SetHeroData(heroAttributes, health, attackDamage, isEnemy);
+        HeroData newHero = new HeroData(heroAttributes, health, attackDamage, isEnemy);
 
         if(!isEnemy)
             availableHeroNamesAndColors.Remove(heroAttributes.Key);
@@ -111,7 +115,8 @@ public static class HeroFactory
         {
             newHero = CreateHeroFromScriptableObject(heroDataBase.ElementAt(randomIndex).Value);
 
-            HeroInfoBase.data.Remove(newHero.HashCode);
+            if(!isEnemy)
+                HeroInfoBase.data.Remove(newHero.HashCode);
         }
 
         return newHero;

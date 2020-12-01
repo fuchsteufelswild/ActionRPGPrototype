@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 157124781641924039}
   - component: {fileID: 157124781641924038}
   - component: {fileID: 8365951626599596972}
-  - component: {fileID: 9005431986997728605}
   m_Layer: 5
   m_Name: BattleHero
   m_TagString: Untagged
@@ -67,25 +66,7 @@ MonoBehaviour:
   m_DeadColor: {r: 1, g: 0, b: 0.0069942474, a: 0.15686275}
   m_HealthBar: {fileID: 7290191382111631290}
   m_AttackDuration: 2
---- !u!95 &9005431986997728605
-Animator:
-  serializedVersion: 3
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 157124781641924036}
-  m_Enabled: 0
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: d5e4649db4582f548bb0109f97d5268f, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  selectedTargetIndex: 0
 --- !u!1 &157124783420535645
 GameObject:
   m_ObjectHideFlags: 0

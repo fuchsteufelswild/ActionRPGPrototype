@@ -10,7 +10,7 @@ public class HeroCreatorWizard : ScriptableWizard
     public int attackDamage = 10;
     public int baseHealth = 100;
     public Color heroColor;
-    [TextArea] public string toolTip = HeroData.DefaultToolTip;
+    [HideInInspector] public string toolTip = HeroData.DefaultToolTip;
 
     private void CreateHero(bool isEnemy)
     {

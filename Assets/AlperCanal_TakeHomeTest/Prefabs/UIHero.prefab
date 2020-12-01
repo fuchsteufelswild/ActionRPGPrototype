@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 2907362978461319956}
   - component: {fileID: 2907362978461319947}
   - component: {fileID: 2619137486281594513}
+  - component: {fileID: 9215171350775499026}
   m_Layer: 5
-  m_Name: HeroFrame
+  m_Name: UIHero
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -91,8 +92,21 @@ MonoBehaviour:
   m_HeroFrame: {fileID: 2907362978461319947}
   m_HeroImage: {fileID: 2907362978826017990}
   m_DefaultFrameColor: {r: 0.6039216, g: 0.5411765, b: 0.39607844, a: 1}
-  m_SelectedFrameColor: {r: 0, g: 1, b: 0.918417, a: 1}
   m_DefaultHeroImageColor: {r: 0.8113208, g: 0.72330016, b: 0.72330016, a: 1}
+  m_SelectedFrameColor: {r: 0, g: 1, b: 0.918417, a: 1}
+--- !u!114 &9215171350775499026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2907362978461319945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Delegates: []
 --- !u!1 &2907362978826017988
 GameObject:
   m_ObjectHideFlags: 0

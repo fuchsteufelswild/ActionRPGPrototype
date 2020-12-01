@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class UIController : MonoBehaviour
 {
@@ -62,10 +63,8 @@ public class UIController : MonoBehaviour
             m_BattleButton.interactable = true;
     }
 
-    void OnHeroDeselected(HeroData hero)
-    {
+    void OnHeroDeselected(HeroData hero) =>
         m_BattleButton.interactable = false;
-    }
 
     public void Refresh()
     {
@@ -78,5 +77,8 @@ public class UIController : MonoBehaviour
             uiHeros[i].ResetSelection();
         }
     }
+
+    public void ResetGame() =>
+        EventMessenger.NotifyEvent(SaveEvents.GAME_RESET);
 
 }
