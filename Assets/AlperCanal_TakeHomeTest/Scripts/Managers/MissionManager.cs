@@ -172,7 +172,11 @@ public class MissionManager : ManagerBase,
 
     void IGameManager.UpdateData(object data)
     {
-        if (data == null) return;
+        if (data == null)
+        {
+            FindObjectOfType<UIController>().SetupUIForMenu();
+            return;
+        }
 
         fightSettings = data as FightSettings;
 

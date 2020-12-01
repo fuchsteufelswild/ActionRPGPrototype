@@ -23,8 +23,6 @@ public class Managers : MonoBehaviour
 
     private void Awake()
     {
-        EventMessenger.AddListener(SaveEvents.GAME_RESET, GameReset);
-
         managers = new List<IGameManager>();
 
         HeroManager = GetComponent<HeroManager>();
@@ -38,6 +36,11 @@ public class Managers : MonoBehaviour
         managers.Add(DataManager);
 
         StartCoroutine(StartUp());
+    }
+
+    private void Start()
+    {
+        EventMessenger.AddListener(SaveEvents.GAME_RESET, GameReset);
     }
 
     IEnumerator StartUp()

@@ -8,6 +8,14 @@ public class UIHero : HeroBase
 
     public void ResetSelection() => isSelected = false;
 
+    public void ResetUIHero()
+    {
+        m_HeroFrame.color = m_DefaultFrameColor;
+        m_HeroImage.color = m_DefaultHeroImageColor;
+        m_Hero = null;
+        ResetSelection();
+    }
+
     protected override void MakeSelection()
     {
         if (isSelected)

@@ -68,6 +68,9 @@ public class UIController : MonoBehaviour
 
     public void Refresh()
     {
+        for (int i = 0; i < uiHeros.Count; ++i)
+            uiHeros[i].ResetUIHero();
+
         HeroData[] heroDatas = Managers.HeroManager.HeroDataArray;
 
         for (int i = 0; i < heroDatas.Length; ++i)
